@@ -1,0 +1,41 @@
+### start master node
+- name: "start kube-apiserver.service"
+  service:
+    name: kube-apiserver
+    state: started
+    enabled: yes
+    daemon_reload: yes
+
+- name: "start kube-controller-manager.service"
+  service:
+    name: kube-controller-manager
+    state: started
+    enabled: yes
+
+- name: "start kube-scheduler.service"
+  service:
+    name: kube-scheduler
+    state: started
+    enabled: yes
+
+### get result
+- name: "kube-apiserver.service status"
+  shell: systemctl status kube-apiserver.service
+  register: kube_apiserver_result
+
+- debug:
+    msg: "{{ kube_apiserver_result['stdout_lines'] }}"
+
+- name: "kube-controller-manager.service status"
+  shell: systemctl status kube-controller-manager.service
+  register: kube_controller_manager_result
+
+- debug:
+    msg: "{{ kube_controller_manager_result['stdout_lines'] }}"
+
+- name: "kube-scheduler.service status"
+  shell: systemctl status kube-scheduler.service
+  register: kube_scheduler_result
+
+- debug:
+    msg: "{{ kube_scheduler_result['stdout_lines'] }}"

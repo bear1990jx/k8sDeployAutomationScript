@@ -1,0 +1,1 @@
+KUBE_CONTROLLER_MANAGER_ARGS="--master=http://{{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }}:8080 --logtostderr=true --log-dir=/var/log/kubernetes --v=2"

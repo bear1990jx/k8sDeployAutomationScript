@@ -1,0 +1,28 @@
+### start worker node
+- name: "start kubelet.service"
+  service:
+    name: kubelet
+    state: started
+    enabled: yes
+    daemon_reload: yes
+
+- name: "start kube-proxy.service"
+  service:
+    name: kube-proxy
+    state: started
+    enabled: yes
+
+### get result
+- name: "kubelet.service status"
+  shell: systemctl status kubelet.service
+  register: kubelet_result
+
+- debug:
+    msg: "{{ kubelet_result['stdout_lines'] }}"
+
+- name: "kube-proxy.service status"
+  shell: systemctl status kube-proxy.service
+  register: kube_proxy_result
+
+- debug:
+    msg: "{{ kube_proxy_result['stdout_lines'] }}"

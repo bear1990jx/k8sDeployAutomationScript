@@ -1,0 +1,1 @@
+KUBELET_ARGS="--kubeconfig=/etc/kubernetes/kubeconfig --hostname-override={{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }} --logtostderr=false --log-dir=/var/log/kubernetes --v=2 --fail-swap-on=false"

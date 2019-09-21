@@ -1,0 +1,27 @@
+#- hosts: single
+#  roles:
+#  - standalonek8s
+#  - testK8s
+
+- hosts: all
+  tasks: [ ]
+  ignore_errors: true
+
+#- hosts: k8smaster
+#  roles:
+#  - k8s_cluster_master
+#  - k8s_cluster_master_start
+
+#- hosts: k8sworker
+#  roles:
+#  - k8s_cluster_worker
+#  - k8s_cluster_worker_start
+
+- hosts: newk8sworker
+  roles:
+  - k8s_cluster_worker
+  - k8s_cluster_worker_start
+
+#- hosts: k8smaster
+#  roles:
+#  - testK8s

@@ -1,0 +1,168 @@
+# stop centos firewall
+- name: "close CentOs firewall"
+  service:
+    name: firewalld
+    state: stopped
+    enabled: no
+
+# install wget
+- name: "install wget"
+  yum:
+    name: wget
+    state: latest
+
+# get Docker repo
+- name: "copy docker repo to folder"
+  copy:
+    src: docker.repo
+    dest: /etc/yum.repos.d
+    backup: no
+
+# update yum repository
+- name: "update yum repository"
+  yum: name=* state=latest
+
+# disable selinux
+- name: "disable selinux"
+  shell: sed -i 's/SELINUX=enforcing/SELINUX=disabled/' /etc/selinux/config
+
+# allow machine accessable from other hostname
+- name: "allow machine accessable from other hostname"
+  lineinfile:
+    path: /etc/sysctl.conf
+    regexp: '^net.ipv4.ip_forward='
+    backrefs: no
+    line: 'net.ipv4.ip_forward=1'
+
+# install docker-engine
+- name: "install docker-engine"
+  yum:
+    name: docker-engine
+    state: latest
+
+######## Prepare Node finish ########
+
+# install etcd
+- name: "install etcd"
+  shell: wget https://github.com/etcd-io/etcd/releases/download/v3.3.13/etcd-v3.3.13-linux-amd64.tar.gz
+
+- name: "give permission"
+  file:
+    path: ~/etcd-v3.3.13-linux-amd64.tar.gz
+    mode: 777
+
+- name: "extract etcd-v3.3.13-linux-amd64.tar.gz"
+  shell: tar -zxvf ~/etcd-v3.3.13-linux-amd64.tar.gz
+
+- name: "move etcd etcdctl to /usr/bin"
+  shell: mv {{ item.src }} {{ item.dest }}
+  with_items:
+  - { src: '/root/etcd-v3.3.13-linux-amd64/etcd', dest: '/usr/bin' }
+  - { src: '/root/etcd-v3.3.13-linux-amd64/etcdctl', dest: '/usr/bin' }
+
+- name: "delete binary package etcd-v3.3.13-linux-amd64.tar.gz"
+  file:
+    path: '{{ item }}'
+    state: absent
+  with_items:
+  - /root/etcd-v3.3.13-linux-amd64.tar.gz
+  - /root/etcd-v3.3.13-linux-amd64
+
+# create etcd service
+- name: "create etcd service"
+  copy:
+    src: etcd.service
+    dest: /usr/lib/systemd/system
+    backup: no
+
+# run etcd
+- name: "daemon-reload"
+  shell: systemctl daemon-reload
+
+- name: "create folder for etcd task"
+  file:
+    path: /var/lib/etcd/
+    state: directory
+
+- name: "run etcd"
+  service:
+    name: etcd
+    state: started
+    enabled: yes
+
+## check cluster cluster health
+- name: "check cluster cluster health"
+  shell: etcdctl cluster-health
+  register: cluster_health_output
+
+- debug:
+    msg: "{{ cluster_health_output['stdout'] }}"
+
+#### finish etcd install and run ####
+
+# download binary package
+- name: "download binary package kubernetes-server-linux-amd64.tar.gz"
+  shell: wget https://dl.k8s.io/v1.9.6/kubernetes-server-linux-amd64.tar.gz
+
+- name: "extract kubernetes-server-linux-amd64.tar.gz"
+  shell: tar -zxvf kubernetes-server-linux-amd64.tar.gz
+
+- name: "create folder for apiserver"
+  file:
+    path: /etc/kubernetes/
+    state: directory
+
+- name: "copy kube-apiserver, kube-controller-manager, kube-scheduler kubectl to /usr/bin"
+  shell: mv {{ item.src }} {{ item.dest }}
+  with_items:
+  - { src: '/root/kubernetes/server/bin/kube-apiserver', dest: '/usr/bin' }
+  - { src: '/root/kubernetes/server/bin/kube-controller-manager', dest: '/usr/bin' }
+  - { src: '/root/kubernetes/server/bin/kube-scheduler', dest: '/usr/bin' }
+  - { src: '/root/kubernetes/server/bin/kubectl', dest: '/usr/bin' }
+
+- name: "copy service file and server file"
+  copy:
+    src: '{{ item.src }}'
+    dest: '{{ item.dest }}'
+    backup: no
+  with_items:
+  - { src: 'kube-apiserver.service', dest: '/usr/lib/systemd/system' }
+  - { src: 'apiserver', dest: '/etc/kubernetes' }
+
+# clean up
+- name: "delete binary package kubernetes-server-linux-amd64.tar.gz"
+  file:
+    path: '{{ item }}'
+    state: absent
+  with_items:
+  - /root/kubernetes-server-linux-amd64.tar.gz
+  - /root/kubernetes
+
+## finish kube-apiserver prepare
+
+# copy kube-controller-manager.service to target
+- name: "copy kube-controller-manager.service to target"
+  copy:
+    src: kube-controller-manager.service
+    dest: /usr/lib/systemd/system
+    backup: no
+
+- name: "generate controller-manager from template"
+  template:
+    src: controller-manager.j2
+    dest: /etc/kubernetes/controller-manager
+
+### finish kube-controller-manager install
+
+- name: "copy kube-scheduler.service to target"
+  copy:
+    src: kube-scheduler.service
+    dest: /usr/lib/systemd/system
+    backup: no
+
+- name: "generate scheduler from template"
+  template:
+    src: scheduler.j2
+    dest: /etc/kubernetes/scheduler
+
+### finish kube-scheduler install

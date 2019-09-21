@@ -1,0 +1,26 @@
+# create folder
+- name: "create folder for k8s task"
+  file:
+    path: ~/k8s
+    state: directory
+
+- name: "copy rc and svc files to the folder"
+  copy:
+    src:  mytomcat.rc.yaml
+    dest: ~/k8s
+    backup: no
+    mode: 777
+
+- name: "copy rc and svc files to the folder"
+  copy:
+    src: mytomcat.svc.yaml
+    dest: ~/k8s
+    backup: no
+    mode: 777
+
+# start service
+- name: "start tomcat service"
+  shell: kubectl create -f ~/k8s/mytomcat.rc.yaml
+
+- name: "start tomcat service"
+  shell: kubectl create -f ~/k8s/mytomcat.svc.yaml

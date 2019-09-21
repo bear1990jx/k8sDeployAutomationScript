@@ -1,0 +1,1 @@
+KUBE_PROXY_ARGS="--master={{ hostvars[groups['k8smaster'][0]]['ansible_all_ipv4_addresses'][0] }}:8080 --hostname-override={{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }} --logtostderr=true --log-dir=/var/log/kubernetes --v=2"

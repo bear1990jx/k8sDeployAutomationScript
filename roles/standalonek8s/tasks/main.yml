@@ -1,0 +1,118 @@
+- name: "start deploy"
+  debug:
+    msg: "start deploy ....."
+
+# update yum repository
+- name: "update yum repository"
+  yum: name=* state=latest
+
+# disable selinux
+- name: "disable selinux"
+  shell: sed -i 's/SELINUX=enforcing/SELINUX=disabled/' /etc/selinux/config
+
+# stop centos firewall
+- name: "close CentOs firewall"
+  service:
+    name: firewalld
+    state: stopped
+
+# install etcd
+- name: "install etcd service"
+  yum:
+    name: etcd
+    state: latest
+
+# install kubernetes
+- name: "install kubernetes service"
+  yum:
+    name: kubernetes
+    state: latest
+
+# install docker
+- name: "install docker service"
+  yum:
+    name: docker
+    state: latest
+
+# install wget
+- name: "install wget"
+  yum:
+    name: wget
+    state: latest
+
+# allow machine accessable from other hostname
+- name: "allow machine accessable from other hostname"
+  lineinfile:
+    path: /etc/sysctl.conf
+    regexp: '^net.ipv4.ip_forward='
+    backrefs: no
+    line: 'net.ipv4.ip_forward=1'
+
+# fix rethat bug: missiong redhat-ca.crt
+- name: "fix rethat bug: missiong redhat-ca.crt (download)"
+  shell: wget http://mirror.centos.org/centos/7/os/x86_64/Packages/python-rhsm-certificates-1.19.10-1.el7_4.x86_64.rpm
+
+- name: "fix rethat bug: missiong redhat-ca.crt (make like)"
+  shell: rpm2cpio python-rhsm-certificates-1.19.10-1.el7_4.x86_64.rpm | cpio -iv --to-stdout ./etc/rhsm/ca/redhat-uep.pem | tee /etc/rhsm/ca/redhat-uep.pem
+
+# change KUBE_ADMISSION_CONTROL setting to support get pods
+- name: "change KUBE_ADMISSION_CONTROL setting to support get pods"
+  lineinfile:
+    path: /etc/kubernetes/apiserver
+    regexp: '^KUBE_ADMISSION_CONTROL='
+    line: 'KUBE_ADMISSION_CONTROL="--admission-control=NamespaceLifecycle,NamespaceExists,LimitRanger,SecurityContextDeny,ResourceQuota"'
+
+# start etcd
+- name: "start etcd"
+  service:
+    name: etcd
+    state: started
+    enabled: yes
+
+# start docker
+- name: "start docker"
+  service:
+    name: docker
+    state: started
+    enabled: yes
+
+# start kube-apiserver
+- name: "start kube-apiserver"
+  service:
+    name: kube-apiserver
+    state: started
+    enabled: yes
+
+# start kube-controller-manager
+- name: "start kube-controller-manager"
+  service:
+    name: kube-controller-manager
+    state: started
+    enabled: yes
+
+# start kube-scheduler
+- name: "start kube-scheduler"
+  service:
+    name: kube-scheduler
+    state: started
+    enabled: yes
+
+# start kubelet
+- name: "start kubelet"
+  service:
+    name: kubelet
+    state: started
+    enabled: yes
+
+# start kube-proxy
+- name: "start kube-proxy"
+  service:
+    name: kube-proxy
+    state: started
+    enabled: yes
+
+# clean up
+- name: "delete python-rhsm-certificates-1.19.10-1.el7_4.x86_64.rpm"
+  file:
+    path: ~/python-rhsm-certificates-1.19.10-1.el7_4.x86_64.rpm
+    state: absent

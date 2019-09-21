@@ -1,0 +1,93 @@
+# stop centos firewall
+- name: "close CentOs firewall"
+  service:
+    name: firewalld
+    state: stopped
+    enabled: no
+
+# install wget
+- name: "install wget"
+  yum:
+    name: wget
+    state: latest
+
+# get Docker repo
+- name: "copy docker repo to folder"
+  copy:
+    src: docker.repo
+    dest: /etc/yum.repos.d
+    backup: no
+
+# update yum repository
+- name: "update yum repository"
+  yum: name=* state=latest
+
+# install docker-engine
+- name: "install docker-engine"
+  yum:
+    name: docker-engine
+    state: latest
+
+######## Prepare Node finish ########
+
+# download binary package
+- name: "download binary package kubernetes-server-linux-amd64.tar.gz"
+  shell: wget https://dl.k8s.io/v1.9.6/kubernetes-server-linux-amd64.tar.gz
+
+- name: "extract kubernetes-server-linux-amd64.tar.gz"
+  shell: tar -zxvf kubernetes-server-linux-amd64.tar.gz
+
+- name: "copy kubelet, kube-proxy to /usr/bin"
+  shell: mv {{ item.src }} {{ item.dest }}
+  with_items:
+  - { src: '/root/kubernetes/server/bin/kubelet', dest: '/usr/bin' }
+  - { src: '/root/kubernetes/server/bin/kube-proxy', dest: '/usr/bin' }
+
+# clean up
+- name: "delete binary package kubernetes-server-linux-amd64.tar.gz"
+  file:
+    path: '{{ item }}'
+    state: absent
+  with_items:
+  - /root/kubernetes-server-linux-amd64.tar.gz
+  - /root/kubernetes
+
+# copy kubelet.service to target folder
+- name: "copy kubelet.service to target folder"
+  copy:
+    src: kubelet.service
+    dest: /usr/lib/systemd/system
+    backup: no
+
+- name: "create folder for kubelet"
+  file:
+    path: "{{ item }}"
+    state: directory
+  with_items:
+  - /var/lib/kubelet
+  - /etc/kubernetes
+
+- name: "generate kubelet from template"
+  template:
+    src: kubelet.j2
+    dest: /etc/kubernetes/kubelet
+
+- name: "generate kubeconfig from template"
+  template:
+    src: kubeconfig.j2
+    dest: /etc/kubernetes/kubeconfig
+
+#### kubelet install finish
+
+- name: "copy kube-proxy.service to target folder"
+  copy:
+    src: kube-proxy.service
+    dest: /usr/lib/systemd/system
+    backup: no
+
+- name: "generate proxy from template"
+  template:
+    src: proxy.j2
+    dest: /etc/kubernetes/proxy
+
+#### kube-proxy install finish
