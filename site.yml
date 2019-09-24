@@ -1,27 +1,33 @@
-#- hosts: single
-#  roles:
-#  - standalonek8s
-#  - testK8s
+- hosts: single
+  roles:
+  - standalonek8s
+  - testK8s
+  tags: standalonek8s
 
 - hosts: all
   tasks: [ ]
   ignore_errors: true
+  tags: [k8scluster, add_new_worker]
 
-#- hosts: k8smaster
-#  roles:
-#  - k8s_cluster_master
-#  - k8s_cluster_master_start
+- hosts: k8smaster
+  roles:
+  - k8s_cluster_master
+  - k8s_cluster_master_start
+  tags: k8scluster
 
-#- hosts: k8sworker
-#  roles:
-#  - k8s_cluster_worker
-#  - k8s_cluster_worker_start
+- hosts: k8sworker
+  roles:
+  - k8s_cluster_worker
+  - k8s_cluster_worker_start
+  tags: k8scluster
 
 - hosts: newk8sworker
   roles:
   - k8s_cluster_worker
   - k8s_cluster_worker_start
+  tags: add_new_worker
 
-#- hosts: k8smaster
-#  roles:
-#  - testK8s
+- hosts: k8smaster
+  roles:
+  - testK8s
+  tags: k8scluster

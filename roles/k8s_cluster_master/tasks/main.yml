@@ -48,11 +48,15 @@
 
 - name: "give permission"
   file:
-    path: ~/etcd-v3.3.13-linux-amd64.tar.gz
+    path: /root/etcd-v3.3.13-linux-amd64.tar.gz
     mode: 777
 
 - name: "extract etcd-v3.3.13-linux-amd64.tar.gz"
-  shell: tar -zxvf ~/etcd-v3.3.13-linux-amd64.tar.gz
+  unarchive:
+    src: /root/etcd-v3.3.13-linux-amd64.tar.gz
+    dest: /root
+    mode: 0755
+    copy: no
 
 - name: "move etcd etcdctl to /usr/bin"
   shell: mv {{ item.src }} {{ item.dest }}
@@ -105,7 +109,11 @@
   shell: wget https://dl.k8s.io/v1.9.6/kubernetes-server-linux-amd64.tar.gz
 
 - name: "extract kubernetes-server-linux-amd64.tar.gz"
-  shell: tar -zxvf kubernetes-server-linux-amd64.tar.gz
+  unarchive:
+    src: /root/kubernetes-server-linux-amd64.tar.gz
+    dest: /root
+    mode: 0755
+    copy: no
 
 - name: "create folder for apiserver"
   file:
